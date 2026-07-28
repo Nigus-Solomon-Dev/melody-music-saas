@@ -4,6 +4,8 @@ const cors = require('cors');
 require('dotenv').config();
 const authRoutes = require('./routes/authRoutes');
 const { protect } = require('./middleware/auth');
+const subscriptionRoutes = require('./routes/subscriptionRoutes');
+const webhookRoutes = require('./routes/webhookRoutes');
 
 const app= express();
 const PORT=process.env.PORT;
@@ -12,6 +14,9 @@ app.use(cors({
   origin:'http://localhost:3000',
   credentials:true
 }))
+
+// Stripe webhooks need the raw body for signature verification — must come before express.json()
+app.use('/api/webhooks/stripe', express.raw({ type: 'application/json' }));
 
 app.use(express.json());
 
@@ -24,6 +29,8 @@ app.get('/', (req,res)=>{
 })
 
 app.use('/api/auth', authRoutes);
+app.use('/api/subscription', subscriptionRoutes);
+app.use('/api/webhooks', webhookRoutes);
 app.get('/api/protected', protect, (req, res) => {
     res.json({
         success: true,
