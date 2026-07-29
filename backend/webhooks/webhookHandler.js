@@ -1,6 +1,12 @@
 const User = require('../models/User');
 const Subscription = require('../models/Subscription');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const {
+  sendWelcomeEmail,
+  sendPaymentFailedEmail,
+  sendCancellationEmail
+} = require('../services/emailService');
+
 //saves subscription to database
 const handleCheckoutSessionCompleted = async (session) => {
   try {
@@ -12,19 +18,55 @@ const handleCheckoutSessionCompleted = async (session) => {
       console.error('User not found for customer:', customerId);
       return;
     }
+    const plan = session.metadata?.plan || 'basic';
     //creating subscription in database
     await Subscription.create({
       userId: user._id,
       stripeSubscriptionId: subscriptionId,
       stripeCustomerId: customerId,
-      plan: session.metadata?.plan || 'basic',
+      plan: plan,
       status: 'active',
       currentPeriodStart: new Date(),
       currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
     })
     console.log(`Subscription saved for user: ${user.email}`);
+    await sendWelcomeEmail(user.email, user.name, plan);
   } catch (error) {
     console.error('Error saving subscription:', error);
+    throw error;
+  }
+}
+
+//handle payment failled 
+const handlePaymentFailed = async (invoice) => {
+  try {
+    const customerId = invoice.customer;
+    const subscriptionId = invoice.subscription;
+
+    const user = await User.findOne({ stripeCustomerId: customerId });
+    if (!user) {
+      console.error('User not found for customer:', customerId);
+      return;
+    }
+
+    const subscription = await Subscription.findOne({
+      stripeSubscriptionId: subscriptionId
+    });
+    if (!subscription) {
+      console.error('Subscription not found:', subscriptionId);
+      return;
+    }
+
+    subscription.status = 'past_due';
+    await subscription.save();
+
+    console.log(`⚠️ Payment failed for user: ${user.email}`);
+
+    //send payment failed to email
+    const portalUrl = `${process.env.FRONTEND_URL}/dashboard`;
+    await sendPaymentFailedEmail(user.email, user.name, portalUrl);
+  } catch (error) {
+    console.error('Error handling payment failure:', error);
     throw error;
   }
 }
@@ -41,11 +83,15 @@ const handleSubscriptionDeleted = async (subscription) => {
     existingSubscription.status = 'canceled';
     await existingSubscription.save();
     console.log(`Subscription canceled for user: ${existingSubscription.userId}`);
+    if (user) {
+      await sendCancellationEmail(user.email, user.name);
+    }
   } catch (error) {
     console.error('Error handling subscription deletion:', error);
     throw error;
   }
 }
+
 
 //receives all Stripe webhook events
 const handleWebhook = async (req, res) => {
@@ -79,6 +125,9 @@ const handleWebhook = async (req, res) => {
       break;
     case 'charge.succeeded':
       console.log('Charge succeeded:', event.data.object.id);
+      break;
+    case 'invoice.payment_failed':
+      await handlePaymentFailed(event.data.object);
       break;
     default:
       console.log(`Unhandled event type: ${event.type}`);
