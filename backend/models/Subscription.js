@@ -15,6 +15,10 @@ const SubscriptionSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
+    stripeSubscriptionItemId: {
+        type: String,
+        required: true,
+    },
     plan: {
         type: String,
         enum: ['basic', 'pro', 'enterprise'],
@@ -45,9 +49,13 @@ const SubscriptionSchema = new mongoose.Schema({
         type: Date,
         default: Date.now,
     },
+    trialEnd: {
+        type: Date,
+        default: null,
+    },
 });
 
-SubscriptionSchema.pre('save', function(next) {
+SubscriptionSchema.pre('save', function (next) {
     this.updatedAt = new Date();
 });
 
