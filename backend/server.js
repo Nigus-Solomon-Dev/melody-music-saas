@@ -6,7 +6,7 @@ const authRoutes = require('./routes/authRoutes');
 const { protect } = require('./middleware/auth');
 const subscriptionRoutes = require('./routes/subscriptionRoutes');
 const webhookRoutes = require('./routes/webhookRoutes');
-
+const { limiter, strictLimiter } = require('./middleware/rateLimiter');
 const app= express();
 const PORT=process.env.PORT;
 
@@ -19,7 +19,13 @@ app.use(cors({
 app.use('/api/webhooks/stripe', express.raw({ type: 'application/json' }));
 
 app.use(express.json());
-
+app.use((req, res, next) => {
+    const skipPaths = ['/api/auth/signup', '/api/auth/login', '/api/subscription/create'];
+    if (skipPaths.some(path => req.path.startsWith(path))) {
+        return next(); // Skip general limiter
+    }
+    return limiter(req, res, next);
+});
 app.get('/', (req,res)=>{
   res.json({
            message: 'SaaS Subscription Hub API',
@@ -27,9 +33,15 @@ app.get('/', (req,res)=>{
         version: '1.0.0'
   })
 })
+app.use('/api/auth/signup', strictLimiter);
+app.use('/api/auth/login', strictLimiter);
+app.use('/api/subscription/create', strictLimiter);
 
 app.use('/api/auth', authRoutes);
 app.use('/api/subscription', subscriptionRoutes);
+
+
+
 app.use('/api/webhooks', webhookRoutes);
 app.get('/api/protected', protect, (req, res) => {
     res.json({
@@ -43,7 +55,7 @@ app.get('/api/protected', protect, (req, res) => {
 //conecting to database
 mongoose.connect(process.env.MONGODB_URI)
 .then(()=>console.log('mongoDB connected'))
-.catch(err=>console.err('mongoDB error:',err));
+.catch(err=>console.error('mongoDB error:',err));
 
 
 
