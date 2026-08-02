@@ -1,23 +1,33 @@
 const Subscription = require('../models/Subscription');
 const { createCheckoutSession } = require('../services/stripeService');
 const PRICE_IDS = {
-  basic: 'price_1Ty6I31bMxbree3KLb2BlGm6',      // ← Replace with your Basic price ID
-  pro: 'price_1Ty6JL1bMxbree3KtdwlsEBE',        // ← Replace with your Pro price ID
-  enterprise: 'price_1Ty6KH1bMxbree3KMhqzUzJo', // ← Replace with your Enterprise price ID
+  basic: {
+    monthly: 'price_1Ty6I31bMxbree3KLb2BlGm6',
+    annual: 'price_1Tzma31bMxbree3KiDnfiqGn',
+  },
+  pro: {
+    monthly: 'price_1Ty6JL1bMxbree3KtdwlsEBE',
+    annual: 'price_1Tzma41bMxbree3KQ90wxpSH',
+  },
+  enterprise: {
+    monthly: 'price_1Ty6KH1bMxbree3KMhqzUzJo',
+    annual: 'price_1Tzma51bMxbree3Kvz0G7e8x',
+  },
 };
 
 //create subscription
 const createSubscription = async (req, res) => {
   try {
     const user = req.user;
-    const { plan, trialDays } = req.body;
+    const { plan, trialDays, billingCycle } = req.body;
     if (!plan || !PRICE_IDS[plan]) {
       return res.status(400).json({
         success: false,
         message: 'Invalid plan. Choose: basic, pro, or enterprise'
       });
     }
-    const priceId = PRICE_IDS[plan];
+    const interval = billingCycle === 'annual' ? 'annual' : 'monthly';
+    const priceId = PRICE_IDS[plan][interval];
     const customerId = user.stripeCustomerId;
     const successUrl = `${process.env.FRONTEND_URL}/success?session_id={CHECKOUT_SESSION_ID}`;
     const cancelUrl = `${process.env.FRONTEND_URL}/pricing`;
@@ -63,7 +73,7 @@ const upgradeSubscription = async (req, res) => {
     //get user active subscription
     const subscription = await Subscription.findOne({
       userId: user._id,
-      status: { $in: ['active', 'trailing'] }
+      status: { $in: ['active', 'trialing'] }
     });
     if (!subscription) {
       return res.status(404).json({
@@ -78,7 +88,7 @@ const upgradeSubscription = async (req, res) => {
         message: `Already on ${newPlan} plan`
       });
     }
-    const newPriceId = PRICE_IDS[newPlan];
+    const newPriceId = PRICE_IDS[newPlan].monthly;
     const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
     // fetch stripe subscription to get the item ID (si_xxx) — required by Stripe to update price
@@ -99,6 +109,7 @@ const upgradeSubscription = async (req, res) => {
     subscription.plan = newPlan;
     subscription.status = stripeSubscription.status;
     subscription.stripeSubscriptionItemId = itemId;
+    subscription.stripePriceId = newPriceId;
     // only update dates if Stripe returned valid timestamps
     if (periodStart) subscription.currentPeriodStart = new Date(periodStart * 1000);
     if (periodEnd) subscription.currentPeriodEnd = new Date(periodEnd * 1000);
@@ -129,7 +140,7 @@ const cancelSubscription = async (req, res) => {
     const user = req.user;
     const subscription = await Subscription.findOne({
       userId: user._id,
-      status: 'active'
+      status: { $in: ['active', 'trialing'] }
     });
     if (!subscription) {
       return res.status(404).json({
@@ -167,13 +178,57 @@ const cancelSubscription = async (req, res) => {
   }
 }
 
+//resume (un-cancel) a subscription scheduled for cancellation
+const resumeSubscription = async (req, res) => {
+  try {
+    const user = req.user;
+    const subscription = await Subscription.findOne({
+      userId: user._id,
+      status: { $in: ['active', 'trialing'] },
+      cancelAtPeriodEnd: true,
+    });
+    if (!subscription) {
+      return res.status(404).json({
+        success: false,
+        message: 'No subscription scheduled for cancellation'
+      });
+    }
+    const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+    await stripe.subscriptions.update(subscription.stripeSubscriptionId, {
+      cancel_at_period_end: false,
+    });
+    subscription.cancelAtPeriodEnd = false;
+    await subscription.save();
+    res.status(200).json({
+      success: true,
+      message: 'Subscription resumed',
+      data: {
+        subscription: {
+          id: subscription._id,
+          plan: subscription.plan,
+          status: subscription.status,
+          cancelAtPeriodEnd: subscription.cancelAtPeriodEnd,
+          currentPeriodEnd: subscription.currentPeriodEnd,
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Resume Subscription Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error resuming subscription',
+      error: error.message,
+    });
+  }
+}
+
 //current subscription details
 const getMySubscription = async (req, res) => {
   try {
     const user = req.user;
     const subscription = await Subscription.findOne({
       userId: user._id,
-      status: 'active'
+      status: { $in: ['active', 'trialing'] }
     });
     if (!subscription) {
       return res.status(200).json({
@@ -195,6 +250,7 @@ const getMySubscription = async (req, res) => {
           cancelAtPeriodEnd: subscription.cancelAtPeriodEnd,
           currentPeriodStart: subscription.currentPeriodStart,
           currentPeriodEnd: subscription.currentPeriodEnd,
+          trialEnd: subscription.trialEnd,
         }
       }
     });
@@ -246,5 +302,6 @@ module.exports = {
   cancelSubscription,
   getMySubscription,
   createPortalSession,
-  upgradeSubscription, 
+  upgradeSubscription,
+  resumeSubscription,
 };
