@@ -6,6 +6,7 @@ const authRoutes = require('./routes/authRoutes');
 const { protect } = require('./middleware/auth');
 const subscriptionRoutes = require('./routes/subscriptionRoutes');
 const webhookRoutes = require('./routes/webhookRoutes');
+const musicRoutes = require('./routes/musicRoutes');
 const { limiter, strictLimiter } = require('./middleware/rateLimiter');
 const app= express();
 const PORT=process.env.PORT;
@@ -39,6 +40,7 @@ app.use('/api/subscription/create', strictLimiter);
 
 app.use('/api/auth', authRoutes);
 app.use('/api/subscription', subscriptionRoutes);
+app.use('/api/music', musicRoutes);
 
 
 
@@ -47,7 +49,7 @@ app.get('/api/protected', protect, (req, res) => {
     res.json({
         success: true,
         message: 'You have access to this protected route!',
-        user: req.user,
+        data: { user: req.user },
     });
 });
 
