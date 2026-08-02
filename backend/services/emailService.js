@@ -64,6 +64,32 @@ const sendPaymentFailedEmail = async (email, name, portalUrl) => {
     throw error;
   }
 };
+//send trial ending email
+const sendTrialEndingEmail = async (email, name, daysLeft) => {
+  try {
+    const transporter = createTransporter();
+    const mailOptions = {
+      from: `"Your SaaS" <${process.env.SMTP_USER}>`,
+      to: email,
+      subject: `Your Free Trial Ends in ${daysLeft} Day${daysLeft === 1 ? '' : 's'}`,
+      html: `
+                <h1>Your Trial is Ending Soon</h1>
+                <p>Hi ${name},</p>
+                <p>Your free trial ends in <strong>${daysLeft} day${daysLeft === 1 ? '' : 's'}</strong>.</p>
+                <p>After your trial, you'll be charged for your selected plan unless you cancel beforehand.</p>
+                <p>You can manage or cancel your subscription anytime from your dashboard.</p>
+                <p>Thanks,<br>Your SaaS Team</p>
+            `,
+    };
+    const info = await transporter.sendMail(mailOptions);
+    console.log(`Trial ending email sent to: ${email}`);
+    return info;
+  } catch (error) {
+    console.error('Error sending trial ending email:', error);
+    throw error;
+  }
+}
+
 //send cancellation email
 
 const sendCancellationEmail = async (email, name) => {
@@ -96,5 +122,6 @@ const sendCancellationEmail = async (email, name) => {
 module.exports = {
   sendPaymentFailedEmail,
   sendWelcomeEmail,
-  sendCancellationEmail
+  sendCancellationEmail,
+  sendTrialEndingEmail
 };
