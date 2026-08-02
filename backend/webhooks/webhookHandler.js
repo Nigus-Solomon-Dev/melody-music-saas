@@ -4,7 +4,8 @@ const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const {
   sendWelcomeEmail,
   sendPaymentFailedEmail,
-  sendCancellationEmail
+  sendCancellationEmail,
+  sendTrialEndingEmail
 } = require('../services/emailService');
 const ProcessedEvent = require('../models/ProcessedEvent');
 
@@ -23,27 +24,40 @@ const handleCheckoutSessionCompleted = async (session) => {
       return;
     }
     const plan = session.metadata?.plan || 'basic';
-    const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+    const subscription = stripeSubscription;
     const trialEnd = subscription.trial_end ? new Date(subscription.trial_end * 1000) : null;
+    // In Stripe API 2025+, current_period_start/end live on the subscription item
+    const periodStart = stripeSubscription.items.data[0].current_period_start ?? stripeSubscription.current_period_start;
+    const periodEnd = stripeSubscription.items.data[0].current_period_end ?? stripeSubscription.current_period_end;
+    // Subscriptions with an active trial are 'trialing', otherwise 'active'
+    const status = trialEnd ? 'trialing' : 'active';
     //creating subscription in database
-    await Subscription.create({
+    const subscriptionData = {
       userId: user._id,
       stripeSubscriptionId: subscriptionId,
       stripeCustomerId: customerId,
+      stripeSubscriptionItemId: itemId,
+      stripePriceId: stripeSubscription.items.data[0].price.id,
       plan: plan,
-      status: 'active',
-      currentPeriodStart: new Date(),
-      currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
+      status: status,
+      currentPeriodStart: new Date(periodStart * 1000),
+      currentPeriodEnd: new Date(periodEnd * 1000),
       trialEnd: trialEnd,
       cancelAtPeriodEnd: false,
-    })
+    };
     await Subscription.create(subscriptionData);
     console.log(` Subscription saved for user: ${user.email}`);
     console.log(`   Plan: ${plan}`);
     console.log(`   Status: ${subscriptionData.status}`);
     if (trialEnd) {
       console.log(`   Trial ends: ${trialEnd}`);
-    } await sendWelcomeEmail(user.email, user.name, plan);
+    }
+    // Email must never fail the webhook (Stripe would retry and hit a duplicate-key error)
+    try {
+      await sendWelcomeEmail(user.email, user.name, plan);
+    } catch (emailErr) {
+      console.error('Welcome email failed (non-fatal):', emailErr.message);
+    }
   } catch (error) {
     console.error('Error saving subscription:', error);
     throw error;
@@ -77,12 +91,49 @@ const handlePaymentFailed = async (invoice) => {
 
     //send payment failed to email
     const portalUrl = `${process.env.FRONTEND_URL}/dashboard`;
-    await sendPaymentFailedEmail(user.email, user.name, portalUrl);
+    try {
+      await sendPaymentFailedEmail(user.email, user.name, portalUrl);
+    } catch (emailErr) {
+      console.error('Payment failed email (non-fatal):', emailErr.message);
+    }
   } catch (error) {
     console.error('Error handling payment failure:', error);
     throw error;
   }
 }
+// 3D Secure / card re-authentication required (SCA)
+const handlePaymentActionRequired = async (invoice) => {
+  try {
+    const customerId = invoice.customer;
+    const subscriptionId = invoice.subscription;
+    const user = await User.findOne({ stripeCustomerId: customerId });
+    if (!user) {
+      console.error('User not found for payment action required:', customerId);
+      return;
+    }
+
+    const subscription = await Subscription.findOne({
+      stripeSubscriptionId: subscriptionId
+    });
+    if (subscription) {
+      subscription.status = 'past_due';
+      await subscription.save();
+    }
+
+    console.log(` Payment action required for user: ${user.email} (3D Secure)`);
+
+    const portalUrl = `${process.env.FRONTEND_URL}/dashboard`;
+    try {
+      await sendPaymentFailedEmail(user.email, user.name, portalUrl);
+    } catch (emailErr) {
+      console.error('Payment action email failed (non-fatal):', emailErr.message);
+    }
+  } catch (error) {
+    console.error('Error handling payment action required:', error);
+    throw error;
+  }
+}
+
 //deletting subscription webhook handler
 const handleSubscriptionDeleted = async (subscription) => {
   try {
@@ -98,14 +149,134 @@ const handleSubscriptionDeleted = async (subscription) => {
     console.log(`Subscription canceled for user: ${existingSubscription.userId}`);
     const user = await User.findById(existingSubscription.userId);
     if (user) {
-      await sendCancellationEmail(user.email, user.name);
+      try {
+        await sendCancellationEmail(user.email, user.name);
+      } catch (emailErr) {
+        console.error('Cancellation email failed (non-fatal):', emailErr.message);
+      }
     }
-  } catch (error) {
+} catch (error) {
     console.error('Error handling subscription deletion:', error);
     throw error;
   }
 }
 
+// Handle subscription renewal (invoice.paid)
+const handleInvoicePaid = async (invoice) => {
+  try {
+    const subscriptionId = invoice.subscription;
+    if (!subscriptionId) return;
+
+    const stripeSubscription = await stripe.subscriptions.retrieve(subscriptionId);
+    const itemId = stripeSubscription.items.data[0].id;
+
+    const subscription = await Subscription.findOne({
+      stripeSubscriptionId: subscriptionId
+    });
+    if (!subscription) {
+      console.error('Subscription not found for renewal:', subscriptionId);
+      return;
+    }
+
+    const periodStart = stripeSubscription.items.data[0].current_period_start ?? stripeSubscription.current_period_start;
+    const periodEnd = stripeSubscription.items.data[0].current_period_end ?? stripeSubscription.current_period_end;
+
+    subscription.status = stripeSubscription.status;
+    subscription.stripeSubscriptionItemId = itemId;
+    if (periodStart) subscription.currentPeriodStart = new Date(periodStart * 1000);
+    if (periodEnd) subscription.currentPeriodEnd = new Date(periodEnd * 1000);
+    subscription.cancelAtPeriodEnd = stripeSubscription.cancel_at_period_end;
+    await subscription.save();
+
+    console.log(` Subscription renewed for: ${subscriptionId}`);
+    console.log(`   New period end: ${subscription.currentPeriodEnd}`);
+  } catch (error) {
+    console.error('Error handling invoice.paid:', error);
+    throw error;
+  }
+}
+
+// Handle subscription updates (plan changes, trial end, status changes)
+const handleSubscriptionUpdated = async (stripeSubscription) => {
+  try {
+    const subscriptionId = stripeSubscription.id;
+    const itemId = stripeSubscription.items.data[0].id;
+
+    const subscription = await Subscription.findOne({
+      stripeSubscriptionId: subscriptionId
+    });
+    if (!subscription) {
+      console.error('Subscription not found for update:', subscriptionId);
+      return;
+    }
+
+    // Determine plan from price ID (product metadata is authoritative, price metadata is fallback)
+    const priceId = stripeSubscription.items.data[0].price.id;
+    let plan = subscription.plan;
+    try {
+      const price = await stripe.prices.retrieve(priceId);
+      const product = await stripe.products.retrieve(price.product);
+      if (product.metadata?.plan) {
+        plan = product.metadata.plan;
+      } else if (price.metadata?.plan) {
+        plan = price.metadata.plan;
+      }
+    } catch (e) {
+      console.log('Could not determine plan from price, keeping existing:', plan);
+    }
+
+    const periodStart = stripeSubscription.items.data[0].current_period_start ?? stripeSubscription.current_period_start;
+    const periodEnd = stripeSubscription.items.data[0].current_period_end ?? stripeSubscription.current_period_end;
+    const trialEnd = stripeSubscription.trial_end ? new Date(stripeSubscription.trial_end * 1000) : null;
+
+    subscription.plan = plan;
+    subscription.status = stripeSubscription.status;
+    subscription.stripeSubscriptionItemId = itemId;
+    subscription.stripePriceId = stripeSubscription.items.data[0].price.id;
+    if (periodStart) subscription.currentPeriodStart = new Date(periodStart * 1000);
+    if (periodEnd) subscription.currentPeriodEnd = new Date(periodEnd * 1000);
+    subscription.cancelAtPeriodEnd = stripeSubscription.cancel_at_period_end;
+    if (trialEnd) subscription.trialEnd = trialEnd;
+    await subscription.save();
+
+    console.log(` Subscription updated: ${subscriptionId}`);
+    console.log(`   Plan: ${plan}, Status: ${stripeSubscription.status}, Cancel at period end: ${stripeSubscription.cancel_at_period_end}`);
+  } catch (error) {
+    console.error('Error handling subscription.updated:', error);
+    throw error;
+  }
+}
+
+// Handle trial ending soon notification
+const handleTrialWillEnd = async (stripeSubscription) => {
+  try {
+    const subscriptionId = stripeSubscription.id;
+    const subscription = await Subscription.findOne({
+      stripeSubscriptionId: subscriptionId
+    });
+    if (!subscription) {
+      console.error('Subscription not found for trial ending:', subscriptionId);
+      return;
+    }
+
+    const user = await User.findById(subscription.userId);
+    if (!user) return;
+
+    const trialEnd = stripeSubscription.trial_end ? new Date(stripeSubscription.trial_end * 1000) : null;
+    const daysLeft = trialEnd ? Math.ceil((trialEnd - new Date()) / (1000 * 60 * 60 * 24)) : 0;
+
+    console.log(` Trial ending soon for user: ${user.email}, Days left: ${daysLeft}`);
+
+    try {
+      await sendTrialEndingEmail(user.email, user.name, daysLeft);
+    } catch (emailErr) {
+      console.error('Trial ending email failed (non-fatal):', emailErr.message);
+    }
+  } catch (error) {
+    console.error('Error handling trial_will_end:', error);
+    throw error;
+  }
+}
 
 //receives all Stripe webhook events
 const handleWebhook = async (req, res) => {
@@ -138,7 +309,15 @@ const handleWebhook = async (req, res) => {
       processed = true;
       break;
     case 'invoice.paid':
-      console.log('Invoice paid:', event.data.object.id);
+      await handleInvoicePaid(event.data.object);
+      processed = true;
+      break;
+    case 'customer.subscription.updated':
+      await handleSubscriptionUpdated(event.data.object);
+      processed = true;
+      break;
+    case 'customer.subscription.trial_will_end':
+      await handleTrialWillEnd(event.data.object);
       processed = true;
       break;
     case 'customer.subscription.deleted':
@@ -159,6 +338,10 @@ const handleWebhook = async (req, res) => {
       break;
     case 'invoice.payment_failed':
       await handlePaymentFailed(event.data.object);
+      processed = true;
+      break;
+    case 'invoice.payment_action_required':
+      await handlePaymentActionRequired(event.data.object);
       processed = true;
       break;
     default:
