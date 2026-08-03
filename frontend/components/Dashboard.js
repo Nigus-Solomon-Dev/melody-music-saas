@@ -424,7 +424,7 @@ export default function Dashboard() {
                 )}
               </div>
 
-              {/* Featured artists — rotating circle carousel */}
+              {/* Featured artists -- rotating circle carousel */}
               {featured && (
                 <div className="relative mb-10 flex flex-col items-center overflow-hidden">
                   {/* soft ambient glow behind the circle */}
@@ -490,7 +490,7 @@ export default function Dashboard() {
                               >
                                 <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" className="text-white translate-x-0.5"><path d="M8 5v14l11-7z" /></svg>
                               </span>
-                              {/* spinning progress ring — OUTSIDE the clipped circle */}
+                              {/* spinning progress ring -- OUTSIDE the clipped circle */}
                               <svg className="absolute -inset-3 w-[calc(100%+24px)] h-[calc(100%+24px)] pointer-events-none" viewBox="0 0 100 100">
                                 <circle cx="50" cy="50" r="49" fill="none" stroke="rgba(255,107,107,0.35)" strokeWidth="2" />
                                 <circle
@@ -523,7 +523,7 @@ export default function Dashboard() {
                 </div>
               )}
 
-              {/* Made For You — Daily Mix */}
+              {/* Made For You -- Daily Mix */}
               <div className="flex justify-between items-end mb-4">
                 <h2 className="text-xl sm:text-2xl font-bold text-white">Made For {firstName}</h2>
                 <span className="text-[#b3b3b3] text-xs font-bold hover:underline cursor-pointer">Show all</span>
