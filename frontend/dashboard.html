@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spotify UI Clone - Tailwind</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.cdnfonts.com/css/circular-std-book');
+        body { font-family: 'Circular Std', sans-serif; }
+        
+        /* Custom Scrollbar for Spotify look */
+        .custom-scrollbar::-webkit-scrollbar { width: 12px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.3); }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.5); }
+    </style>
+</head>
+<body class="bg-black text-white h-screen flex flex-col overflow-hidden">
+
+    <!-- HEADER -->
+    <header class="h-16 flex items-center justify-between px-4 flex-shrink-0">
+        <div class="flex items-center w-[300px]">
+            <i class="fab fa-spotify text-3xl cursor-pointer"></i>
+        </div>
+
+        <div class="flex-1 flex items-center justify-center gap-2">
+            <div class="w-12 h-12 bg-[#1f1f1f] rounded-full flex items-center justify-center cursor-pointer hover:scale-105 transition">
+                <i class="fas fa-home text-xl"></i>
+            </div>
+            <div class="relative w-[450px] group">
+                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <i class="fas fa-search text-gray-400"></i>
+                </div>
+                <input type="text" 
+                    class="block w-full bg-[#1f1f1f] border border-transparent hover:border-[#333] focus:border-white focus:outline-none rounded-full py-3 pl-11 pr-12 text-sm transition" 
+                    placeholder="What do you want to play?">
+                <div class="absolute inset-y-0 right-0 pr-4 flex items-center border-l border-gray-600 my-3 gap-3 pl-3">
+                    <i class="fas fa-archive text-gray-400 hover:text-white cursor-pointer"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex items-center justify-end gap-5 w-[400px]">
+            <button class="bg-white text-black px-4 py-2 rounded-full font-bold text-sm hover:scale-105 transition">Explore Premium</button>
+            <a href="#" class="text-sm font-bold flex items-center gap-1 hover:scale-105 transition"><i class="far fa-arrow-alt-circle-down"></i> Install App</a>
+            <i class="far fa-bell text-gray-400 hover:text-white cursor-pointer text-lg"></i>
+            <i class="fas fa-users text-gray-400 hover:text-white cursor-pointer text-lg"></i>
+            <div class="w-8 h-8 bg-[#9c5c3e] rounded-full flex items-center justify-center font-bold text-sm cursor-pointer">K</div>
+        </div>
+    </header>
+
+    <!-- MAIN APP BODY -->
+    <main class="flex-1 flex gap-2 px-2 overflow-hidden">
+        
+        <!-- Sidebar Left -->
+        <aside class="w-72 bg-[#121212] rounded-lg p-4 flex flex-col gap-4">
+            <div class="flex items-center justify-between text-gray-400 font-bold hover:text-white transition cursor-pointer">
+                <span class="flex items-center gap-4"><i class="fas fa-book text-xl"></i> Your Library</span>
+                <i class="fas fa-plus hover:bg-[#1f1f1f] p-2 rounded-full"></i>
+            </div>
+            <div>
+                <span class="bg-[#2a2a2a] px-4 py-1.5 rounded-full text-xs font-bold">Artists</span>
+            </div>
+        </aside>
+
+        <!-- Middle Content -->
+        <section class="flex-1 bg-gradient-to-b from-[#222222] to-[#121212] rounded-lg overflow-y-auto custom-scrollbar p-4">
+            <div class="flex gap-2 mb-6">
+                <span class="bg-white text-black px-4 py-1.5 rounded-full text-sm font-bold cursor-pointer">All</span>
+                <span class="bg-[#2a2a2a] hover:bg-[#333] px-4 py-1.5 rounded-full text-sm font-bold cursor-pointer transition">Music</span>
+            </div>
+
+            <!-- Small Cards Grid -->
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-2 mb-8">
+                <!-- Card Item -->
+                <div class="bg-white/10 hover:bg-white/20 transition rounded overflow-hidden flex items-center group relative cursor-pointer">
+                    <img src="https://placehold.co/48x48/222/fff?text=S" alt="cover" class="w-12 h-12 shadow-lg">
+                    <span class="font-bold text-sm px-3 truncate">Slow amharic songs</span>
+                    <button class="absolute right-2 bg-[#1ed760] text-black w-10 h-10 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-xl">
+                        <i class="fas fa-play"></i>
+                    </button>
+                </div>
+                <!-- Repeat for other cards -->
+                <div class="bg-white/10 hover:bg-white/20 transition rounded overflow-hidden flex items-center group relative cursor-pointer">
+                    <img src="https://placehold.co/48x48/444/fff?text=A" class="w-12 h-12 shadow-lg">
+                    <span class="font-bold text-sm px-3">Alchalkum</span>
+                    <button class="absolute right-2 bg-[#1ed760] text-black w-10 h-10 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-xl">
+                        <i class="fas fa-play"></i>
+                    </button>
+                </div>
+                <div class="bg-white/10 hover:bg-white/20 transition rounded overflow-hidden flex items-center group relative cursor-pointer">
+                    <img src="https://placehold.co/48x48/666/fff?text=Z" class="w-12 h-12 shadow-lg">
+                    <span class="font-bold text-sm px-3">Zemari Deacon Abel</span>
+                    <button class="absolute right-2 bg-[#1ed760] text-black w-10 h-10 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-xl">
+                        <i class="fas fa-play"></i>
+                    </button>
+                </div>
+                <div class="bg-white/10 hover:bg-white/20 transition rounded overflow-hidden flex items-center group relative cursor-pointer">
+                    <img src="https://placehold.co/48x48/888/fff?text=E" class="w-12 h-12 shadow-lg">
+                    <span class="font-bold text-sm px-3">Ethiopian Instrumental</span>
+                    <button class="absolute right-2 bg-[#1ed760] text-black w-10 h-10 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-xl">
+                        <i class="fas fa-play"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Section Title -->
+            <div class="flex justify-between items-end mb-4">
+                <h2 class="text-2xl font-bold hover:underline cursor-pointer">Made For king</h2>
+                <span class="text-gray-400 text-sm font-bold hover:underline cursor-pointer">Show all</span>
+            </div>
+
+            <!-- Daily Mix Grid -->
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+                <!-- Daily Card -->
+                <div class="bg-[#181818] hover:bg-[#282828] p-4 rounded-lg transition group relative cursor-pointer">
+                    <div class="relative mb-4">
+                        <img src="https://placehold.co/150/00bcd4/fff?text=Mix+1" class="w-full aspect-square object-cover rounded shadow-2xl">
+                        <button class="absolute bottom-2 right-2 bg-[#1ed760] text-black w-12 h-12 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 group-hover:translate-y-[-8px] transition-all duration-300 shadow-xl">
+                            <i class="fas fa-play"></i>
+                        </button>
+                    </div>
+                    <h3 class="font-bold text-sm mb-1">Daily Mix 1</h3>
+                    <p class="text-gray-400 text-xs leading-relaxed line-clamp-2">Ephrem Tamiru, Michael Belayneh, and more</p>
+                </div>
+                <!-- Card 2 -->
+                <div class="bg-[#181818] hover:bg-[#282828] p-4 rounded-lg transition group relative cursor-pointer">
+                    <div class="relative mb-4">
+                        <img src="https://placehold.co/150/4caf50/fff?text=Mix+2" class="w-full aspect-square object-cover rounded shadow-2xl">
+                        <button class="absolute bottom-2 right-2 bg-[#1ed760] text-black w-12 h-12 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 group-hover:translate-y-[-8px] transition-all duration-300 shadow-xl">
+                            <i class="fas fa-play"></i>
+                        </button>
+                    </div>
+                    <h3 class="font-bold text-sm mb-1">Daily Mix 2</h3>
+                    <p class="text-gray-400 text-xs leading-relaxed line-clamp-2">Mahmoud Ahmed, Hailu Mergia, and more</p>
+                </div>
+                <!-- Card 3 -->
+                <div class="bg-[#181818] hover:bg-[#282828] p-4 rounded-lg transition group relative cursor-pointer">
+                    <div class="relative mb-4">
+                        <img src="https://placehold.co/150/ff5722/fff?text=Mix+3" class="w-full aspect-square object-cover rounded shadow-2xl">
+                        <button class="absolute bottom-2 right-2 bg-[#1ed760] text-black w-12 h-12 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 group-hover:translate-y-[-8px] transition-all duration-300 shadow-xl">
+                            <i class="fas fa-play"></i>
+                        </button>
+                    </div>
+                    <h3 class="font-bold text-sm mb-1">Daily Mix 3</h3>
+                    <p class="text-gray-400 text-xs leading-relaxed line-clamp-2">Gebreyohannes Gebretsadik, and more</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Right Sidebar -->
+        <aside class="w-80 bg-[#121212] rounded-lg p-4 overflow-y-auto custom-scrollbar hidden xl:block">
+            <div class="flex justify-between items-center mb-5">
+                <span class="font-bold text-sm truncate pr-2">Ethiopian instrumental music</span>
+                <div class="flex gap-4 text-gray-400">
+                    <i class="fas fa-ellipsis-h hover:text-white cursor-pointer"></i>
+                    <i class="fas fa-times hover:text-white cursor-pointer"></i>
+                </div>
+            </div>
+
+            <img src="https://placehold.co/400x400/333/fff?text=Album+Art" class="w-full rounded-lg mb-4 cursor-pointer hover:scale-[1.02] transition duration-300 shadow-lg">
+
+            <div class="flex justify-between items-start mb-6">
+                <div>
+                    <h2 class="text-2xl font-bold hover:underline cursor-pointer">Japanese Woman</h2>
+                    <p class="text-gray-400 hover:text-white hover:underline cursor-pointer">Nadav Haber</p>
+                </div>
+                <div class="flex gap-4 text-xl text-gray-400">
+                    <i class="fas fa-share-alt hover:text-white cursor-pointer"></i>
+                    <i class="far fa-plus-square hover:text-white cursor-pointer"></i>
+                </div>
+            </div>
+
+            <div class="bg-[#1f1f1f] rounded-lg overflow-hidden">
+                <div class="relative h-44 group cursor-pointer">
+                    <img src="https://placehold.co/300x180/222/fff?text=Artist+Photo" class="w-full h-full object-cover">
+                    <div class="absolute inset-0 bg-black/20 group-hover:bg-black/0 transition"></div>
+                    <h3 class="absolute top-4 left-4 bg-black/40 backdrop-blur-sm px-2 py-1 rounded text-sm font-bold">About the artist</h3>
+                </div>
+                <div class="p-4">
+                    <p class="font-bold hover:underline cursor-pointer">Nadav Haber</p>
+                    <p class="text-gray-400 text-sm mt-3 leading-relaxed">World-class saxophonist blending Ethiopian jazz with unique melodies.</p>
+                </div>
+            </div>
+        </aside>
+
+    </main>
+
+    <!-- PLAYER BAR -->
+    <footer class="h-[90px] bg-black px-4 flex items-center justify-between flex-shrink-0">
+        <!-- Footer Left -->
+        <div class="flex items-center gap-4 w-[30%]">
+            <img src="https://placehold.co/56x56/333/fff?text=Art" class="w-14 h-14 rounded shadow-lg">
+            <div class="truncate">
+                <p class="text-sm font-medium hover:underline cursor-pointer">Japanese Woman</p>
+                <p class="text-[11px] text-gray-400 hover:text-white hover:underline cursor-pointer">Nadav Haber</p>
+            </div>
+            <i class="far fa-heart text-gray-400 hover:text-white cursor-pointer ml-2"></i>
+        </div>
+
+        <!-- Footer Center Controls -->
+        <div class="flex flex-col items-center max-w-[40%] w-full gap-2">
+            <div class="flex items-center gap-6 text-gray-400">
+                <i class="fas fa-random hover:text-white cursor-pointer text-sm"></i>
+                <i class="fas fa-step-backward hover:text-white cursor-pointer text-xl"></i>
+                <i class="fas fa-play-circle text-white text-[32px] hover:scale-105 transition cursor-pointer"></i>
+                <i class="fas fa-step-forward hover:text-white cursor-pointer text-xl"></i>
+                <i class="fas fa-redo hover:text-white cursor-pointer text-sm"></i>
+            </div>
+            <div class="flex items-center w-full gap-2 text-[11px] text-gray-400">
+                <span>0:18</span>
+                <div class="flex-1 h-1 bg-[#4f4f4f] rounded-full group cursor-pointer">
+                    <div class="w-[30%] h-full bg-white group-hover:bg-[#1ed760] rounded-full relative">
+                        <div class="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full opacity-0 group-hover:opacity-100 shadow-lg"></div>
+                    </div>
+                </div>
+                <span>4:39</span>
+            </div>
+        </div>
+
+        <!-- Footer Right Controls -->
+        <div class="flex items-center justify-end gap-4 w-[30%] text-gray-400">
+            <i class="fas fa-microphone hover:text-white cursor-pointer text-xs"></i>
+            <i class="fas fa-list hover:text-white cursor-pointer text-xs"></i>
+            <i class="fas fa-laptop hover:text-white cursor-pointer text-xs"></i>
+            <div class="flex items-center gap-2">
+                <i class="fas fa-volume-up hover:text-white cursor-pointer text-xs"></i>
+                <div class="w-24 h-1 bg-[#4f4f4f] rounded-full group cursor-pointer">
+                    <div class="w-[70%] h-full bg-white group-hover:bg-[#1ed760] rounded-full"></div>
+                </div>
+            </div>
+            <i class="fas fa-expand hover:text-white cursor-pointer text-xs"></i>
+        </div>
+    </footer>
+
+</body>
+</html>
