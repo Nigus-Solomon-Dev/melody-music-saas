@@ -11,9 +11,14 @@ const { limiter, strictLimiter } = require('./middleware/rateLimiter');
 const app= express();
 const PORT=process.env.PORT;
 
+const allowedOrigins = (process.env.CORS_ORIGINS || process.env.FRONTEND_URL || 'http://localhost:3000')
+  .split(',')
+  .map((s) => s.trim())
+  .filter(Boolean);
+
 app.use(cors({
-  origin:'http://localhost:3000',
-  credentials:true
+  origin: allowedOrigins.length === 1 ? allowedOrigins[0] : allowedOrigins,
+  credentials: true
 }))
 
 // Stripe webhooks need the raw body for signature verification — must come before express.json()
