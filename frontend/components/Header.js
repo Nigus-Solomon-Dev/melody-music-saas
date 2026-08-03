@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import Link from 'next/link';
 import { useState } from 'react';
@@ -18,7 +18,7 @@ export default function Header({ user, onOpenAuth, onLogout, onSearchSubmit }) {
             <path d="M12 3v10.55A4 4 0 1 0 14 17V7h4V3h-6z" />
           </svg>
         </div>
-        <span className="text-white font-bold text-xl tracking-tight">WaveNote</span>
+        <span className="text-white font-bold text-xl tracking-tight">Melody</span>
       </div>
 
       <div className="flex-1 flex justify-center px-8">
@@ -37,7 +37,7 @@ export default function Header({ user, onOpenAuth, onLogout, onSearchSubmit }) {
             className="flex-1 min-w-0 bg-transparent border-none text-white placeholder-white/40 text-sm outline-none"
           />
           <kbd className="hidden sm:inline-flex items-center px-1.5 py-0.5 rounded-md bg-white/10 text-white/50 text-[10px] font-bold mr-1">
-            ↵
+            ?
           </kbd>
           <button
             onClick={handleSubmit}

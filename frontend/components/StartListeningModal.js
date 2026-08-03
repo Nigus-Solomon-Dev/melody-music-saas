@@ -1,4 +1,4 @@
-﻿export default function StartListeningModal({ open, onClose, onOpenAuth }) {
+export default function StartListeningModal({ open, onClose, onOpenAuth }) {
   if (!open) return null;
 
   return (
@@ -40,7 +40,7 @@
 
         <div className="flex-[1.2] p-[60px_40px] flex flex-col justify-center items-center text-center">
           <h1 className="text-[32px] font-bold mb-8 leading-tight text-white">
-            Start listening with a free WaveNote account
+            Start listening with a free Melody account
           </h1>
           <button
             onClick={() => onOpenAuth('signup')}

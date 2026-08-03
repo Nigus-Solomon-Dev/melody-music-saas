@@ -8,10 +8,10 @@ export default function Footer() {
               <path d="M12 3v10.55A4 4 0 1 0 14 17V7h4V3h-6z" />
             </svg>
           </div>
-          <span className="text-white font-bold tracking-tight">WaveNote</span>
+          <span className="text-white font-bold tracking-tight">Melody</span>
         </div>
 
-        <p className="text-white/35 text-sm">© 2026 WaveNote</p>
+        <p className="text-white/35 text-sm">© 2026 Melody</p>
 
         <div className="flex gap-2">
           {['X', 'IG', 'FB'].map((s) => (

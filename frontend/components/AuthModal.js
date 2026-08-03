@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState } from 'react';
 import { signup, login } from '../lib/api';
@@ -181,7 +181,7 @@ export default function AuthModal({ open, mode, onClose, onToggleMode, onAuthSuc
             className="text-white font-bold underline cursor-pointer block mt-2 hover:text-[#ff6b6b]"
             onClick={() => { setError(''); onToggleMode(); }}
           >
-            {isSignup ? 'Log in' : 'Sign up for WaveNote'}
+            {isSignup ? 'Log in' : 'Sign up for Melody'}
           </a>
         </div>
       </div>

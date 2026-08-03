@@ -1,8 +1,8 @@
-﻿export default function RadioCard({ item, onClick }) {
+export default function RadioCard({ item, onClick }) {
   return (
     <div key={item.title} className="relative group" onClick={onClick}>
       <div className="rounded-lg p-4 flex flex-col overflow-hidden cursor-pointer relative" style={{ background: item.bg, color: item.color, aspectRatio: '1/1.2' }}>
-        <div className="flex justify-between text-[10px] font-bold mb-2 opacity-80"><span>WAVENOTE</span><span>RADIO</span></div>
+        <div className="flex justify-between text-[10px] font-bold mb-2 opacity-80"><span>Melody</span><span>RADIO</span></div>
         <div className="flex-1 flex items-center justify-center">
           <div className="w-24 h-24 rounded-full border-4 border-white overflow-hidden">
             <img src={item.img} alt={item.title} className="w-full h-full object-cover" />

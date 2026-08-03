@@ -88,7 +88,7 @@ export default function HomePage() {
 
         <HeroSection tracks={tracks.slice(0, 3)} onStart={() => setIsModalOpen(true)} />
 
-        <ContentSection title="Trending Now" subtitle="What the world is listening to" id="wave-note-browse">
+        <ContentSection title="Trending Now" subtitle="What the world is listening to" id="melody-browse">
           {loading
             ? [1, 2, 3, 4].map((i) => (
                 <div key={i} className="bg-white/10 rounded-lg p-4 animate-pulse">
