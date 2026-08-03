@@ -120,6 +120,7 @@ function mapTrack(t) {
     titleShort: t.title_short,
     artist: t.artist?.name,
     artistId: t.artist?.id ? String(t.artist.id) : null,
+    artistPicture: t.artist?.picture_medium || t.artist?.picture_big || t.artist?.picture_small || null,
     album: t.album?.title,
     albumCover: t.album?.cover_big || t.album?.cover_medium || t.album?.cover_small || null,
     previewUrl: t.preview || null,
@@ -212,6 +213,22 @@ const getArtistAlbums = async (artistId, limit = 12) => {
   return (data.data || []).map(mapAlbum);
 };
 
+const getAlbum = async (albumId) => {
+  const data = await getJson(`${DEEZER_BASE}/album/${albumId}`, `album:${albumId}`);
+  const tracks = (data.tracks?.data || []).map(mapTrack);
+  await enrichWithYoutube(tracks);
+  return {
+    id: String(data.id),
+    title: data.title,
+    cover: data.cover_big || data.cover_medium || data.cover_small || null,
+    releaseDate: data.release_date,
+    nbTracks: data.nb_tracks,
+    artist: data.artist?.name,
+    artistId: data.artist?.id ? String(data.artist.id) : null,
+    tracks,
+  };
+};
+
 const getRelatedArtists = async (artistId, limit = 8) => {
   const data = await getJson(
     `${DEEZER_BASE}/artist/${artistId}/related?limit=${limit}`,
@@ -222,6 +239,61 @@ const getRelatedArtists = async (artistId, limit = 8) => {
     name: a.name,
     picture: a.picture_medium || a.picture_small || a.picture || null,
   }));
+};
+
+// Curated list of well-known artists resolved from Deezer by name search.
+// Used by the dashboard "Your Favorite Artists" row.
+const getCuratedArtists = async (names) => {
+  const list = Array.isArray(names) && names.length ? names : ['J. Cole', 'Teddy Afro', 'Dawit Tsige', 'Burna Boy', 'Wizkid', 'The Weeknd', 'Rihanna'];
+  const normalize = (s) => s.trim().toLowerCase().replace(/[^a-z0-9 ]/g, '');
+
+  const results = await Promise.all(
+    list.map(async (name) => {
+      try {
+        const data = await getJson(
+          `${DEEZER_BASE}/search/artist?q=${encodeURIComponent(name)}&limit=1`,
+          `artist-search:${name}:1`
+        );
+        const a = data.data?.[0];
+        // Only accept a match that actually looks like the requested artist,
+        // otherwise Deezer returns unrelated fuzzy matches (e.g. "Teddy Karo" for "Teddy Afro").
+        const matchOk = a && (normalize(a.name) === normalize(name) || normalize(a.name).includes(normalize(name)) || normalize(name).includes(normalize(a.name)));
+        if (!a || !matchOk) return null;
+        return {
+          artistId: String(a.id),
+          artist: a.name,
+          artistPicture: a.picture_big || a.picture_medium || a.picture || null,
+        };
+      } catch {
+        return null;
+      }
+    })
+  );
+
+  const matched = results.filter(Boolean);
+  const missing = list.length - matched.length;
+  if (missing <= 0) return matched;
+
+  // Backfill missing artists with real, popular artists from the chart so the row stays full.
+  try {
+    const chart = await getChart(Math.max(20, missing * 3));
+    const seen = new Set(matched.map((m) => m.artistId));
+    for (const t of chart) {
+      if (t.artistId && !seen.has(t.artistId)) {
+        matched.push({
+          artistId: String(t.artistId),
+          artist: t.artist,
+          artistPicture: t.artistPicture || null,
+        });
+        seen.add(t.artistId);
+        if (matched.length >= list.length) break;
+      }
+    }
+  } catch {
+    // ignore backfill failure
+  }
+
+  return matched;
 };
 
 // Chart-based recommendations (works without a user account)
@@ -271,7 +343,9 @@ module.exports = {
   getArtist,
   getArtistTopTracks,
   getArtistAlbums,
+  getAlbum,
   getRelatedArtists,
+  getCuratedArtists,
   getRecommendations,
   getChart,
   getLyrics,
