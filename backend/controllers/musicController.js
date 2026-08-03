@@ -5,7 +5,9 @@ const {
   getArtist,
   getArtistTopTracks,
   getArtistAlbums,
+  getAlbum,
   getRelatedArtists,
+  getCuratedArtists,
   getRecommendations,
   getChart,
   getLyrics,
@@ -68,6 +70,28 @@ const artist = async (req, res) => {
   }
 };
 
+const album = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const albumData = await getAlbum(id);
+    res.status(200).json({ success: true, data: { album: albumData } });
+  } catch (error) {
+    console.error('Music Album Error:', error);
+    res.status(404).json({ success: false, message: 'Album not found', error: error.message });
+  }
+};
+
+const curatedArtists = async (req, res) => {
+  try {
+    const names = req.query.names ? req.query.names.split(',') : null;
+    const artists = await getCuratedArtists(names);
+    res.status(200).json({ success: true, data: { artists } });
+  } catch (error) {
+    console.error('Music Curated Artists Error:', error);
+    res.status(500).json({ success: false, message: 'Error fetching artists', error: error.message });
+  }
+};
+
 const lyrics = async (req, res) => {
   try {
     const { id } = req.params;
@@ -80,25 +104,9 @@ const lyrics = async (req, res) => {
   }
 };
 
-// Pro+ only - gated by subscription plan
+// Pro+ only - gated by requirePlan middleware
 const recommendations = async (req, res) => {
   try {
-    const user = req.user;
-    if (!user) {
-      return res.status(401).json({ success: false, message: 'Please login' });
-    }
-    const Subscription = require('../models/Subscription');
-    const subscription = await Subscription.findOne({
-      userId: user._id,
-      status: { $in: ['active', 'trialing'] },
-    });
-    const isPremium = subscription && ['pro', 'enterprise'].includes(subscription.plan);
-    if (!isPremium) {
-      return res.status(403).json({
-        success: false,
-        message: 'Recommendations are available on Pro and Enterprise plans',
-      });
-    }
     const limit = Math.min(parseInt(req.query.limit, 10) || 12, 30);
     const tracks = await getRecommendations(limit);
     res.status(200).json({ success: true, data: { tracks } });
@@ -125,6 +133,8 @@ module.exports = {
   track,
   fullPlayback,
   artist,
+  album,
+  curatedArtists,
   lyrics,
   recommendations,
   chart,
