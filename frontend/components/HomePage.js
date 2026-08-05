@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 import CanvasBackground from './CanvasBackground';
+import MusicLoader from './MusicLoader';
 import Header from './Header';
 import HeroSection from './HeroSection';
 import ContentSection from './ContentSection';
@@ -71,6 +72,10 @@ export default function HomePage() {
 
   function openSignupForSong() {
     setIsModalOpen(true);
+  }
+
+  if (loading) {
+    return <MusicLoader label="Melody" />;
   }
 
   return (

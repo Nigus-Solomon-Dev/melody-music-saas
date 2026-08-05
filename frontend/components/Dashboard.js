@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { getToken, clearToken, getMe } from '../lib/api';
 import { musicApi } from '../lib/musicApi';
 import CanvasBackground from './CanvasBackground';
+import MusicLoader from './MusicLoader';
 import SubscriptionCard from './dashboard/SubscriptionCard';
 import BillingPortalButton from './dashboard/BillingPortalButton';
 import PlayerBar from './PlayerBar';
@@ -121,17 +122,7 @@ export default function Dashboard() {
   ];
 
   if (loading) {
-    return (
-      <div className="relative min-h-screen flex flex-col">
-        <CanvasBackground />
-        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-10">
-          <div className="flex flex-col items-center gap-4">
-            <div className="w-10 h-10 border-4 border-[#ff6b6b] border-t-transparent rounded-full animate-spin"></div>
-            <p className="text-white/70 font-medium text-sm">Checking your session…</p>
-          </div>
-        </div>
-      </div>
-    );
+    return <MusicLoader label={user?.name ? `Melody, ${user.name.split(' ')[0]}` : 'Melody'} />;
   }
 
   return (
