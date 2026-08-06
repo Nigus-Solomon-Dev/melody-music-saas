@@ -5,7 +5,7 @@ export default function StartListeningModal({ open, onClose, onOpenAuth }) {
     <div className="fixed inset-0 z-[1000] flex items-center justify-center" onClick={onClose}>
       <div className="absolute inset-0 bg-black/70" />
       <div
-        className="relative bg-[#242424] w-[800px] max-w-[90%] rounded-lg flex overflow-hidden shadow-2xl"
+        className="relative bg-[#242424] w-[800px] max-w-[92%] rounded-lg flex flex-col sm:flex-row overflow-y-auto max-h-[90vh] shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <button
@@ -19,7 +19,7 @@ export default function StartListeningModal({ open, onClose, onOpenAuth }) {
         </button>
 
         <div
-          className="flex-1 min-h-[450px] relative flex items-center justify-center overflow-hidden"
+          className="sm:flex-1 min-h-[200px] sm:min-h-[450px] relative flex items-center justify-center overflow-hidden"
           style={{
             background:
               "url('https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?q=80&w=1000&auto=format&fit=crop') center/cover",
@@ -27,19 +27,19 @@ export default function StartListeningModal({ open, onClose, onOpenAuth }) {
         >
           <div className="absolute inset-0 bg-black/30" />
           {/* animated ripple rings, like the music is being touched */}
-          <div className="relative w-36 h-36">
+          <div className="relative w-32 h-32 sm:w-36 sm:h-36">
             <div className="absolute inset-0 rounded-full border-2 border-[#ff6b6b]/60" style={{ animation: 'ring 1.6s ease-out infinite' }} />
             <div className="absolute inset-0 rounded-full border-2 border-[#ff6b6b]/40" style={{ animation: 'ring 1.6s ease-out 0.6s infinite' }} />
             <div className="absolute inset-3 rounded-full bg-[#ff6b6b]/90 flex items-center justify-center">
-              <svg width="36" height="36" viewBox="0 0 24 24" fill="black">
+              <svg width="32" height="32" className="sm:w-9 sm:h-9" viewBox="0 0 24 24" fill="black">
                 <path d="M8 5v14l11-7z" />
               </svg>
             </div>
           </div>
         </div>
 
-        <div className="flex-[1.2] p-[60px_40px] flex flex-col justify-center items-center text-center">
-          <h1 className="text-[32px] font-bold mb-8 leading-tight text-white">
+        <div className="sm:flex-[1.2] p-8 sm:p-[60px_40px] flex flex-col justify-center items-center text-center">
+          <h1 className="text-2xl sm:text-[32px] font-bold mb-6 sm:mb-8 leading-tight text-white">
             Start listening with a free Melody account
           </h1>
           <button

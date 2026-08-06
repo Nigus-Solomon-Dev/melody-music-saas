@@ -86,7 +86,7 @@ export default function AuthModal({ open, mode, onClose, onToggleMode, onAuthSuc
       `}</style>
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
       <div
-        className="relative bg-gradient-to-b from-[#1f1f1f] to-[#121212] w-full max-w-[600px] rounded-2xl text-center px-14 py-4 shadow-[0_30px_80px_-20px_rgba(0,0,0,0.9),0_0_40px_rgba(255,107,107,0.08)] border border-white/10"
+        className="relative bg-gradient-to-b from-[#1f1f1f] to-[#121212] w-full max-w-[600px] max-h-[90vh] overflow-y-auto rounded-2xl text-center px-6 sm:px-14 py-4 shadow-[0_30px_80px_-20px_rgba(0,0,0,0.9),0_0_40px_rgba(255,107,107,0.08)] border border-white/10"
         onClick={(e) => e.stopPropagation()}
       >
         {/* soft glow accent */}
@@ -108,7 +108,7 @@ export default function AuthModal({ open, mode, onClose, onToggleMode, onAuthSuc
           </svg>
         </div>
 
-        <h1 className="relative text-[32px] font-black -tracking-wider leading-[1.1] mb-7 text-white">
+        <h1 className="relative text-2xl sm:text-[32px] font-black -tracking-wider leading-[1.1] mb-6 sm:mb-7 text-white">
           {isSignup ? 'Sign up to start listening' : 'Welcome back'}
         </h1>
 
